@@ -23,6 +23,7 @@ runs:
   steps:
     - name: Get Go cache locations
       id: go-cache-loc
+      shell: bash
       run: |
         echo "go-mod-cache=$(go env GOMODCACHE)" >> "${GITHUB_OUPUT}"
         echo "go-build-cache=$(go env GOCACHE)" >> "${GITHUB_OUPUT}"
@@ -30,19 +31,20 @@ runs:
     - name: Handle Go module cache
       id: go-mod-cache
       uses: actions/cache@v3
-        with:
-          path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
-          key: ${{ inputs.mod-key }}
+      with:
+        path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
+        key: ${{ inputs.mod-key }}
 
     - name: Handle Go build cache
       id: go-build-cache
       uses: actions/cache@v3
-        with:
-          path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
-          key: ${{ inputs.build-key }}
+      with:
+        path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
+        key: ${{ inputs.build-key }}
 
     - name: Install Github actions cache extension
       if: ${{ steps.go-mod-cache.outputs.cache-hit || steps.go-build-cache.outputs.cache-hit }}
+      shell: bash
       run: gh extension install actions/gh-actions-cache
 
     - name: Delete Go module cache
