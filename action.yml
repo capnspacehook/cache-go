@@ -2,8 +2,11 @@ name: 'Cache and update Go caches'
 description: "Restore and update Go module and build caches"
 author: "Andrew LeFevre"
 inputs:
-  key:
-    description: "An explicit key for restoring and saving the caches"
+  mod-key:
+    description: "An explicit key for restoring and saving the module cache"
+    required: true
+  build-key:
+    description: "An explicit key for restoring and saving the build cache"
     required: true
   github-token:
     description: "GITHUB_TOKEN as provided by secrets"
@@ -29,14 +32,14 @@ runs:
       uses: actions/cache@v3
         with:
           path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
-          key: mod-${{ inputs.key }}
+          key: ${{ inputs.mod-key }}
 
     - name: Handle Go build cache
       id: go-build-cache
       uses: actions/cache@v3
         with:
           path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
-          key: build-${{ inputs.key }}
+          key: ${{ inputs.build-key }}
 
     - name: Install Github actions cache extension
       if: ${{ steps.go-mod-cache.outputs.cache-hit || steps.go-build-cache.outputs.cache-hit }}
@@ -49,7 +52,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         main: ":" # no-op
-        post: gh actions-cache delete mod-${{ inputs.key }} --confirm
+        post: gh actions-cache delete ${{ inputs.mod-key }} --confirm
       continue-on-error: true
 
     - name: Delete Go build cache
@@ -59,5 +62,5 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         main: ":" # no-op
-        post: gh actions-cache delete build-${{ inputs.key }} --confirm
+        post: gh actions-cache delete ${{ inputs.build-key }} --confirm
       continue-on-error: true
