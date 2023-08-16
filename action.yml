@@ -13,10 +13,10 @@ inputs:
     required: true
 outputs:
   mod-cache-hit:
-    description: "A boolean value to indicate if a cache was hit for GOMODCACHE"
+    description: "A boolean value to indicate if the module cache was hit"
     value: ${{ steps.go-mod-cache.outputs.cache-hit }}
   build-cache-hit:
-    description: "A boolean value to indicate if a cache was hit for GOCACHE"
+    description: "A boolean value to indicate if the build cache was hit"
     value: ${{ steps.go-build-cache.outputs.cache-hit }}
 runs:
   using: composite
@@ -25,8 +25,8 @@ runs:
       id: go-cache-loc
       shell: bash
       run: |
-        echo "go-mod-cache=$(go env GOMODCACHE)" >> "${GITHUB_OUPUT}"
-        echo "go-build-cache=$(go env GOCACHE)" >> "${GITHUB_OUPUT}"
+        echo "go-mod-cache=$(go env GOMODCACHE)" >> "${GITHUB_OUTPUT}"
+        echo "go-build-cache=$(go env GOCACHE)" >> "${GITHUB_OUTPUT}"
 
     - name: Handle Go module cache
       id: go-mod-cache
