@@ -1,0 +1,63 @@
+name: 'Cache and update Go caches'
+description: "Restore and update Go module and build caches"
+author: "Andrew LeFevre"
+inputs:
+  key:
+    description: "An explicit key for restoring and saving the caches"
+    required: true
+  github-token:
+    description: "GITHUB_TOKEN as provided by secrets"
+    required: true
+outputs:
+  mod-cache-hit:
+    description: "A boolean value to indicate if a cache was hit for GOMODCACHE"
+    value: ${{ steps.go-mod-cache.outputs.cache-hit }}
+  build-cache-hit:
+    description: "A boolean value to indicate if a cache was hit for GOCACHE"
+    value: ${{ steps.go-build-cache.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    - name: Get Go cache locations
+      id: go-cache-loc
+      run: |
+        echo "go-mod-cache=$(go env GOMODCACHE)" >> "${GITHUB_OUPUT}"
+        echo "go-build-cache=$(go env GOCACHE)" >> "${GITHUB_OUPUT}"
+
+    - name: Handle Go module cache
+      id: go-mod-cache
+      uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
+          key: mod-${{ inputs.key }}
+
+    - name: Handle Go build cache
+      id: go-build-cache
+      uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
+          key: build-${{ inputs.key }}
+
+    - name: Install Github actions cache extension
+      if: ${{ steps.go-mod-cache.outputs.cache-hit || steps.go-build-cache.outputs.cache-hit }}
+      run: gh extension install actions/gh-actions-cache
+
+    - name: Delete Go module cache
+      if: ${{ steps.go-mod-cache.outputs.cache-hit }}
+      uses: TLizer/action-with-post-step@v1
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        main: ":" # no-op
+        post: gh actions-cache delete mod-${{ inputs.key }} --confirm
+      continue-on-error: true
+
+    - name: Delete Go build cache
+      if: ${{ steps.go-build-cache.outputs.cache-hit }}
+      uses: TLizer/action-with-post-step@v1
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        main: ":" # no-op
+        post: gh actions-cache delete build-${{ inputs.key }} --confirm
+      continue-on-error: true
