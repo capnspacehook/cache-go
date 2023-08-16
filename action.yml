@@ -44,6 +44,8 @@ runs:
 
     - name: Install Github actions cache extension
       if: ${{ steps.go-mod-cache.outputs.cache-hit || steps.go-build-cache.outputs.cache-hit }}
+      env:
+        GH_TOKEN: ${{ github.token }}
       shell: bash
       run: gh extension install actions/gh-actions-cache
 
