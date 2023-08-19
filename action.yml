@@ -49,6 +49,7 @@ runs:
 
     - name: Check caches
       id: check-caches
+      shell: bash
       run: |
         if [[ $(ls -A ${{ steps.go-cache-loc.outputs.go-mod-cache }}) ]]; then
           MOD_CACHE_HIT="true"
@@ -68,6 +69,7 @@ runs:
     - name: Record Go cache files used
       id: start-pruner
       if: steps.check-caches.outputs.mod-cache-hit == "true" || steps.check-caches.outputs.build-cache-hit == "true"
+      shell: bash
       run: |
         MOD_CACHE="${{ steps.go-cache-loc.outputs.go-mod-cache }}"
         BUILD_CACHE="${{ steps.go-cache-loc.outputs.go-build-cache }}"
