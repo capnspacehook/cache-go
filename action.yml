@@ -1,23 +1,24 @@
-name: 'Cache and update Go caches'
+name: "Manage Go caches"
 description: "Restore and update Go module and build caches"
 author: "Andrew LeFevre"
 inputs:
   mod-key:
     description: "An explicit key for restoring and saving the module cache"
     required: true
+  mod-restore-key:
+    description: "A prefix of `mod-key` to use to restore a stale cache if no cache hit occurred for `mod-key`"
   build-key:
     description: "An explicit key for restoring and saving the build cache"
     required: true
-  github-token:
-    description: "GITHUB_TOKEN as provided by secrets"
-    required: true
+  build-restore-key:
+    description: "A prefix of `build-key` to use to restore a stale cache if no cache hit occurred for `build-key`"
 outputs:
   mod-cache-hit:
     description: "A boolean value to indicate if the module cache was hit"
-    value: ${{ steps.go-mod-cache.outputs.cache-hit }}
+    value: ${{ steps.check-caches.outputs.mod-cache-hit }}
   build-cache-hit:
     description: "A boolean value to indicate if the build cache was hit"
-    value: ${{ steps.go-build-cache.outputs.cache-hit }}
+    value: ${{ steps.check-caches.outputs.build-cache-hit }}
 runs:
   using: composite
   steps:
@@ -34,6 +35,8 @@ runs:
       with:
         path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
         key: ${{ inputs.mod-key }}
+        restore-keys: |
+          ${{ inputs.mod-restore-key }}
 
     - name: Handle Go build cache
       id: go-build-cache
@@ -41,30 +44,50 @@ runs:
       with:
         path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
         key: ${{ inputs.build-key }}
+        restore-keys: |
+          ${{ inputs.build-restore-key }}
 
-    - name: Install Github actions cache extension
-      if: ${{ steps.go-mod-cache.outputs.cache-hit || steps.go-build-cache.outputs.cache-hit }}
-      env:
-        GH_TOKEN: ${{ github.token }}
-      shell: bash
-      run: gh extension install actions/gh-actions-cache
+    - name: Check caches
+      id: check-caches
+      run: |
+        if [[ $(ls -A ${{ steps.go-cache-loc.outputs.go-mod-cache }}) ]]; then
+          MOD_CACHE_HIT="true"
+        else
+          MOD_CACHE_HIT="false"
+        fi
 
-    - name: Delete Go module cache
-      if: ${{ steps.go-mod-cache.outputs.cache-hit }}
-      uses: TLizer/action-with-post-step@v1
-      env:
-        GH_TOKEN: ${{ github.token }}
+        if [[ $(ls -A ${{ steps.go-cache-loc.outputs.go-build-cache }}) ]]; then
+          BUILD_CACHE_HIT="true"
+        else
+          BUILD_CACHE_HIT="false"
+        fi
+
+        echo "mod-cache-hit=${MOD_CACHE_HIT}" >> "${GITHUB_OUTPUT}"
+        echo "build-cache-hit=${BUILD_CACHE_HIT}" >> "${GITHUB_OUTPUT}"
+
+    - name: Record Go cache files used
+      id: start-pruner
+      if: steps.check-caches.outputs.mod-cache-hit == "true" || steps.check-caches.outputs.build-cache-hit == "true"
+      run: |
+        MOD_CACHE="${{ steps.go-cache-loc.outputs.go-mod-cache }}"
+        BUILD_CACHE="${{ steps.go-cache-loc.outputs.go-build-cache }}"
+        CONT_ID="$(docker run -d -v ${MOD_CACHE}:${MOD_CACHE} -v ${BUILD_CACHE}:${BUILD_CACHE} ghcr.io/capnspacehook/go-cache-prune@latest -mod-cache ${MOD_CACHE} -build-cache ${BUILD_CACHE} -no-pid-file)"
+        echo "cont-id=${CONT_ID}" >> "${GITHUB_OUTPUT}"
+
+    - name: Prune Go caches
+      if: steps.check-caches.outputs.mod-cache-hit == "true" || steps.check-caches.outputs.build-cache-hit == "true"
+      uses: gacts/run-and-post-run@v1
       with:
-        main: "true" # no-op
-        post: gh actions-cache delete ${{ inputs.mod-key }} --confirm
-      continue-on-error: true
+        post: |
+          if [[ ${{ steps.check-caches.outputs.mod-cache-hit }} == true ]]; then
+            # make Go module cache writable so it can be pruned
+            chmod -R 0777 ${{ steps.go-cache-loc.outputs.go-mod-cache }}
+          fi
 
-    - name: Delete Go build cache
-      if: ${{ steps.go-build-cache.outputs.cache-hit }}
-      uses: TLizer/action-with-post-step@v1
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-      with:
-        main: "true" # no-op
-        post: gh actions-cache delete ${{ inputs.build-key }} --confirm
+          CONT_ID="${{ steps.start-pruner.outputs.cont-id }}"
+          # tell go-cache-pruner to stop recording used files and start
+          # removing unused files
+          docker stop --signal SIGHUP --time 30 "${CONT_ID}"
+          # exit with the exit code of go-cache-prune
+          exit "$(docker wait ${CONT_ID} | tr -d '\n')"
       continue-on-error: true
