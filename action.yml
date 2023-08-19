@@ -68,7 +68,7 @@ runs:
 
     - name: Record Go cache files used
       id: start-pruner
-      if: steps.check-caches.outputs.mod-cache-hit == "true" || steps.check-caches.outputs.build-cache-hit == "true"
+      if: steps.check-caches.outputs.mod-cache-hit == 'true' || steps.check-caches.outputs.build-cache-hit == 'true'
       shell: bash
       run: |
         MOD_CACHE="${{ steps.go-cache-loc.outputs.go-mod-cache }}"
@@ -77,7 +77,7 @@ runs:
         echo "cont-id=${CONT_ID}" >> "${GITHUB_OUTPUT}"
 
     - name: Prune Go caches
-      if: steps.check-caches.outputs.mod-cache-hit == "true" || steps.check-caches.outputs.build-cache-hit == "true"
+      if: steps.check-caches.outputs.mod-cache-hit == 'true' || steps.check-caches.outputs.build-cache-hit == 'true'
       uses: gacts/run-and-post-run@v1
       with:
         post: |
