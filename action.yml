@@ -90,6 +90,8 @@ runs:
           # tell go-cache-pruner to stop recording used files and start
           # removing unused files
           docker stop --signal SIGHUP --time 30 "${CONT_ID}"
-          # exit with the exit code of go-cache-prune
-          exit "$(docker wait ${CONT_ID} | tr -d '\n')"
+          EXIT_CODE="$(docker wait ${CONT_ID} | tr -d '\n')"
+          docker logs "${CONT_ID}"
+
+          exit "${EXIT_CODE}"
       continue-on-error: true
