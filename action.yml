@@ -78,7 +78,7 @@ runs:
 
     - name: Prune Go caches
       if: steps.check-caches.outputs.mod-cache-hit == 'true' || steps.check-caches.outputs.build-cache-hit == 'true'
-      uses: gacts/run-and-post-run@v1
+      uses: capnspacehook/run-and-post-run@main
       with:
         post: |
           if [[ ${{ steps.check-caches.outputs.mod-cache-hit }} == true ]]; then
