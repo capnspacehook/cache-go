@@ -73,7 +73,7 @@ runs:
       run: |
         MOD_CACHE="${{ steps.go-cache-loc.outputs.go-mod-cache }}"
         BUILD_CACHE="${{ steps.go-cache-loc.outputs.go-build-cache }}"
-        CONT_ID="$(docker run -d -v ${MOD_CACHE}:${MOD_CACHE} -v ${BUILD_CACHE}:${BUILD_CACHE} ghcr.io/capnspacehook/go-cache-prune@latest -mod-cache ${MOD_CACHE} -build-cache ${BUILD_CACHE} -no-pid-file)"
+        CONT_ID="$(docker run -d -v ${MOD_CACHE}:${MOD_CACHE} -v ${BUILD_CACHE}:${BUILD_CACHE} ghcr.io/capnspacehook/go-cache-prune:latest -mod-cache ${MOD_CACHE} -build-cache ${BUILD_CACHE} -no-pid-file)"
         echo "cont-id=${CONT_ID}" >> "${GITHUB_OUTPUT}"
 
     - name: Prune Go caches
