@@ -103,8 +103,8 @@ runs:
                     ghcr.io/capnspacehook/go-cache-prune:latest \
                     -mod-cache ${MOD_CACHE} \
                     -build-cache ${BUILD_CACHE} \
-                    -prune-mod-cache=${{ steps.check-caches.outputs.mod-cache-hit }}
-                    -prune-build-cache=${{ steps.check-caches.outputs.build-cache-hit }}
+                    -prune-mod-cache=${{ steps.check-caches.outputs.mod-cache-hit }} \
+                    -prune-build-cache=${{ steps.check-caches.outputs.build-cache-hit }} \
                   )"
         echo "cont-id=${CONT_ID}" >> "${GITHUB_OUTPUT}"
 
