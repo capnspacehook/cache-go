@@ -29,23 +29,48 @@ runs:
         echo "go-mod-cache=$(go env GOMODCACHE)" >> "${GITHUB_OUTPUT}"
         echo "go-build-cache=$(go env GOCACHE)" >> "${GITHUB_OUTPUT}"
 
+    - name: Set default cache keys if necessary
+      id: cache-keys
+      shell: bash
+      run: |
+        MOD_KEY="${{ inputs.mod-key }}"
+        MOD_RESTORE_KEY="${{ inputs.mod-restore-key }}"
+        BUILD_KEY="${{ inputs.build-key }}"
+        BUILD_RESTORE_KEY="${{ inputs.build-restore-key }}"
+
+        GO_VERSION="$(go version | grep -Po '\d\.\d\d\.\d+')"
+
+        if [[ -z $MOD_KEY ]]; then
+          MOD_KEY="${{ github.job }}-module-${{ hashFiles('**/go.sum') }}"
+          MOD_RESTORE_KEY="${{ github.job }}-module"
+        fi
+        if [[ -z $BUILD_KEY ]]; then
+          BUILD_KEY="${{ github.job }}-${GO_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+          BUILD_RESTORE_KEY="${{ github.job }}-${GO_VERSION}"
+        fi
+
+        echo "mod-key=${MOD_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "mod-restore-key=${MOD_RESTORE_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "build-key=${BUILD_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "build-restore-key=${BUILD_RESTORE_KEY}" >> "${GITHUB_OUTPUT}"
+
     - name: Handle Go module cache
       id: go-mod-cache
       uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
-        key: ${{ inputs.mod-key }}
+        key: ${{ steps.cache-keys.outputs.mod-key }}
         restore-keys: |
-          ${{ inputs.mod-restore-key }}
+          ${{ steps.cache-keys.outputs.mod-restore-key }}
 
     - name: Handle Go build cache
       id: go-build-cache
       uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
-        key: ${{ inputs.build-key }}
+        key: ${{ steps.cache-keys.outputs.build-key }}
         restore-keys: |
-          ${{ inputs.build-restore-key }}
+          ${{ steps.cache-keys.outputs.build-restore-key }}
 
     - name: Check caches
       id: check-caches
@@ -73,7 +98,11 @@ runs:
       run: |
         MOD_CACHE="${{ steps.go-cache-loc.outputs.go-mod-cache }}"
         BUILD_CACHE="${{ steps.go-cache-loc.outputs.go-build-cache }}"
-        CONT_ID="$(docker run -d -v ${MOD_CACHE}:${MOD_CACHE} -v ${BUILD_CACHE}:${BUILD_CACHE} ghcr.io/capnspacehook/go-cache-prune:latest -mod-cache ${MOD_CACHE} -build-cache ${BUILD_CACHE} -no-pid-file)"
+        CONT_ID="$(docker run -d \
+                    -v ${MOD_CACHE}:${MOD_CACHE} \
+                    -v ${BUILD_CACHE}:${BUILD_CACHE} \
+                    ghcr.io/capnspacehook/go-cache-prune:latest \
+                    -mod-cache ${MOD_CACHE} -build-cache ${BUILD_CACHE} -no-pid-file)"
         echo "cont-id=${CONT_ID}" >> "${GITHUB_OUTPUT}"
 
     - name: Prune Go caches
