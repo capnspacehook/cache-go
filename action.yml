@@ -113,11 +113,6 @@ runs:
       uses: capnspacehook/run-and-post-run@main
       with:
         post: |
-          if [[ ${{ steps.check-caches.outputs.mod-cache-hit }} == true ]]; then
-            # make Go module cache writable so it can be pruned
-            chmod -R 0777 ${{ steps.go-cache-loc.outputs.go-mod-cache }}
-          fi
-
           CONT_ID="${{ steps.start-pruner.outputs.cont-id }}"
           # tell go-cache-pruner to stop recording used files and start
           # removing unused files
