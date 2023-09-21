@@ -1,6 +1,6 @@
 # cache-go
 
-Github Action to restore and save cached Go module and build files as effiently as possible.
+Github Action to restore and save cached Go module and build files as efficiently as possible.
 
 Module and build files are cached seperately to avoid not restoring cached build files because
 dependencies were changed. Likewise a Go version upgrade should not invalidate cached module
