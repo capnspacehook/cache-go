@@ -1,5 +1,5 @@
-name: "Cache Go"
-description: "Cache Go module and build files more effiently"
+name: "Cache Go files efficiently"
+description: "Cache Go module and build files more efficiently"
 author: "Andrew LeFevre"
 inputs:
   mod-key:
