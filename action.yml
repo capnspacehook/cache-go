@@ -1,5 +1,5 @@
-name: "Manage Go caches"
-description: "Restore and update Go module and build caches"
+name: "Cache Go"
+description: "Cache Go module and build files more effiently"
 author: "Andrew LeFevre"
 inputs:
   mod-key:
