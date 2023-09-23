@@ -79,12 +79,12 @@ runs:
       shell: bash
       run: |
         MOD_CACHE_HIT="false"
-        if [[ $(ls -A ${{ steps.go-cache-loc.outputs.go-mod-cache }}) ]]; then
+        if [[ -d ${{ steps.go-cache-loc.outputs.go-mod-cache }} ]]; then
           MOD_CACHE_HIT="true"
         fi
 
         BUILD_CACHE_HIT="false"
-        if [[ $(ls -A ${{ steps.go-cache-loc.outputs.go-build-cache }}) ]]; then
+        if [[ -d ${{ steps.go-cache-loc.outputs.go-build-cache }} ]]; then
           BUILD_CACHE_HIT="true"
         fi
 
