@@ -43,8 +43,8 @@ runs:
         GO_VERSION="$(go version | grep -Po '\d\.\d\d\.\d+')"
 
         if [[ -z $MOD_KEY ]]; then
-          MOD_KEY="${{ github.job }}-${{ hashFiles('**/go.sum') }}"
-          MOD_RESTORE_KEY="${{ github.job }}-"
+          MOD_KEY="${{ github.job }}-mod-${{ hashFiles('**/go.sum') }}"
+          MOD_RESTORE_KEY="${{ github.job }}-mod-"
         fi
         if [[ -z $BUILD_KEY ]]; then
           BUILD_KEY="${{ github.job }}-${{ runner.os }}-${GO_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
