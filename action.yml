@@ -58,21 +58,23 @@ runs:
 
     - name: Handle Go module cache
       id: go-mod-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.go-cache-loc.outputs.go-mod-cache }}
         key: ${{ steps.cache-keys.outputs.mod-key }}
         restore-keys: |
           ${{ steps.cache-keys.outputs.mod-restore-key }}
+        save-always: true
 
     - name: Handle Go build cache
       id: go-build-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.go-cache-loc.outputs.go-build-cache }}
         key: ${{ steps.cache-keys.outputs.build-key }}
         restore-keys: |
           ${{ steps.cache-keys.outputs.build-restore-key }}
+        save-always: true
 
     - name: Check caches
       id: check-caches
