@@ -40,7 +40,7 @@ runs:
   steps:
     - name: Get Go cache paths and keys
       id: cache-info
-      uses: ./common
+      uses: capnspacehook/cache-go/common@master
       with:
         mod-key: ${{ inputs.mod-key }}
         mod-restore-key: ${{ inputs.mod-restore-key }}
