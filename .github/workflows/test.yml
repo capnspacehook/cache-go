@@ -1,16 +1,23 @@
 name: Test
 
 on:
+  workflow_dispatch: {}
   push:
     branches:
       - master
+    paths:
+      - "**action.yml"
+      - ".github/workflows/*"
   pull_request:
     branches:
       - "*"
+    paths:
+      - "**action.yml"
+      - ".github/workflows/*"
 
 jobs:
-  test-action:
-    name: Test Action
+  test:
+    name: Test Caching
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,5 +28,101 @@ jobs:
         with:
           go-version: "*"
 
-      - name: Run action
-        uses: ./
+      - name: Run restore action
+        uses: ./restore
+
+      - name: Populate caches
+        run: |
+          go run golang.org/x/example/hello@latest
+
+      - name: Run save action
+        uses: ./save
+
+      - name: Remove caches
+        run: |
+          sudo rm -rf "$(go env GOMODCACHE)"
+          rm -rf "$(go env GOCACHE)"
+
+      - name: Run restore action again
+        uses: ./restore
+
+      - name: Verify that caches were restored
+        run: |
+          test -d "$(go env GOMODCACHE)"
+          test -d "$(go env GOCACHE)"
+
+  test-fuzz:
+    name: Test Caching Fuzz Corpus
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Go
+        uses: WillAbides/setup-go-faster@v1.14.0
+        with:
+          go-version: "*"
+
+      - name: Run restore action
+        uses: ./restore
+        with:
+          cache-fuzz-corpus: true
+
+      - name: Populate caches
+        run: |
+          cd dummy_fuzz
+          go test -fuzz Fuzz -fuzztime 3s
+
+      - name: Run save action
+        uses: ./save
+        with:
+          cache-fuzz-corpus: true
+
+      - name: Remove local fuzz corpus
+        run: |
+          rm -rf "$(go env GOCACHE)/fuzz"
+      
+      - name: Run restore action
+        uses: ./restore
+        with:
+          cache-fuzz-corpus: true
+
+      - name: Verify that fuzz corpus was restored
+        run: |
+          test -d "$(go env GOCACHE)/fuzz"
+
+  test-no-fuzz:
+    name: Test Not Caching Fuzz Corpus
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Go
+        uses: WillAbides/setup-go-faster@v1.14.0
+        with:
+          go-version: "*"
+
+      - name: Populate caches
+        run: |
+          cd dummy_fuzz
+          go test -fuzz Fuzz -fuzztime 3s
+
+      - name: Run save action
+        uses: ./save
+        with:
+          cache-fuzz-corpus: false
+
+      - name: Remove local fuzz corpus
+        run: |
+          rm -rf "$(go env GOCACHE)/fuzz"
+    
+      - name: Run restore action
+        uses: ./restore
+        with:
+          cache-fuzz-corpus: false
+
+      - name: Verify that fuzz corpus was not restored
+        run: |
+          test -d "$(go env GOCACHE)"
+          test ! -d "$(go env GOCACHE)/fuzz"

@@ -1,6 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+    - "/"
+    - "/common/*"
+    - "/save/*"
+    - "/restore/*"
     schedule:
       interval: daily

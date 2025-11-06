@@ -1,0 +1,48 @@
+name: "Save Go caches efficiently"
+description: "Save Go modules, build files and optionally fuzz corpora more efficiently"
+inputs:
+  mod-key:
+    description: "An explicit key for saving the module cache"
+    required: false
+  build-key:
+    description: "An explicit key for saving the build cache"
+    required: false
+  cache-fuzz-corpus:
+    description: "A boolean value to indicate if the fuzz corpus should be cached"
+    required: false
+    default: false
+    type: boolean
+  fuzz-corpus-key:
+    description: "An explicit key for saving the fuzz corpus cache"
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Get Go cache paths and keys
+      id: cache-info
+      uses: ./common
+      with:
+        mod-key: ${{ inputs.mod-key }}
+        build-key: ${{ inputs.build-key }}
+        fuzz-corpus-key: ${{ inputs.fuzz-corpus-key }}
+
+    - name: Save Go module cache
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-info.outputs.mod-key }}
+        path: ${{ steps.cache-info.outputs.mod-path }}
+
+    - name: Save Go build cache
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-info.outputs.build-key }}
+        # this will only match files in the build cache and ignore 
+        # files in the fuzz corpus
+        path: ${{ steps.cache-info.outputs.build-path }}/??
+
+    - name: Save Go fuzz corpus
+      if: inputs.cache-fuzz-corpus == 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-info.outputs.fuzz-key }}
+        path: ${{ steps.cache-info.outputs.fuzz-path }}
