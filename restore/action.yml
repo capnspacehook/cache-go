@@ -1,0 +1,98 @@
+name: "Restore Go caches efficiently"
+description: "Restore Go modules, build files and optionally fuzz corpora more efficiently"
+author: "Andrew LeFevre"
+inputs:
+  mod-key:
+    description: "An explicit key for restoring the module cache"
+    required: false
+  mod-restore-key:
+    description: "A prefix of `mod-key` to use to restore a stale cache if no cache hit occurred for `mod-key`"
+    required: false
+  build-key:
+    description: "An explicit key for restoring the build cache"
+    required: false
+  build-restore-key:
+    description: "A prefix of `build-key` to use to restore a stale cache if no cache hit occurred for `build-key`"
+    required: false
+  cache-fuzz-corpus:
+    description: "A boolean value to indicate if the fuzz corpus should be cached"
+    required: false
+    default: false
+    type: boolean
+  fuzz-corpus-key:
+    description: "An explicit key for restoring the fuzz corpus cache"
+    required: false
+  fuzz-corpus-restore-key:
+    description: "A prefix of `fuzz-corpus-key` to use to restore a stale cache if no cache hit occurred for `fuzz-corpus-key`"
+    required: false
+outputs:
+  mod-cache-hit:
+    description: "A boolean value to indicate if the module cache was hit with any key"
+    value: ${{ steps.check-caches.outputs.mod-cache-hit }}
+  build-cache-hit:
+    description: "A boolean value to indicate if the build cache was hit with any key"
+    value: ${{ steps.check-caches.outputs.build-cache-hit }}
+  fuzz-corpus-hit:
+    description: "A boolean value to indicate if the fuzz corpus cache was hit with any key"
+    value: ${{ steps.check-caches.outputs.fuzz-corpus-hit }}
+runs:
+  using: composite
+  steps:
+    - name: Get Go cache paths and keys
+      id: cache-info
+      uses: ./common
+      with:
+        mod-key: ${{ inputs.mod-key }}
+        mod-restore-key: ${{ inputs.mod-restore-key }}
+        build-key: ${{ inputs.build-key }}
+        build-restore-key: ${{ inputs.build-restore-key }}
+        fuzz-corpus-key: ${{ inputs.fuzz-corpus-key }}
+        fuzz-corpus-restore-key: ${{ inputs.fuzz-corpus-restore-key }}
+
+    - name: Restore Go module cache
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.cache-info.outputs.mod-key }}
+        path: ${{ steps.cache-info.outputs.mod-path }}
+        restore-keys: |
+          ${{ steps.cache-info.outputs.mod-restore-key }}
+
+    - name: Restore Go build cache
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.cache-info.outputs.build-key }}
+        # this will only match files in the build cache and ignore 
+        # files in the fuzz corpus
+        path: ${{ steps.cache-info.outputs.build-path }}/??
+        restore-keys: |
+          ${{ steps.cache-info.outputs.build-restore-key }}
+
+    - name: Restore Go fuzz corpus
+      if: inputs.cache-fuzz-corpus == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.cache-info.outputs.fuzz-key }}
+        path: ${{ steps.cache-info.outputs.fuzz-path }}
+        restore-keys: |
+          ${{ steps.cache-info.outputs.fuzz-restore-key }}
+
+    - name: Check caches
+      id: check-caches
+      shell: bash
+      run: |
+        MOD_CACHE_HIT="false"
+        if [[ -d ${{ steps.cache-info.outputs.mod-path }} ]]; then
+          MOD_CACHE_HIT="true"
+        fi
+        BUILD_CACHE_HIT="false"
+        if [[ -d ${{ steps.cache-info.outputs.build-path }} ]]; then
+          BUILD_CACHE_HIT="true"
+        fi
+        FUZZ_CORPUS_HIT="false"
+        if [[ -d ${{ steps.cache-info.outputs.fuzz-path }} ]]; then
+          FUZZ_CORPUS_HIT="true"
+        fi
+
+        echo "mod-cache-hit=${MOD_CACHE_HIT}" >> "${GITHUB_OUTPUT}"
+        echo "build-cache-hit=${BUILD_CACHE_HIT}" >> "${GITHUB_OUTPUT}"
+        echo "fuzz-corpus-hit=${FUZZ_CORPUS_HIT}" >> "${GITHUB_OUTPUT}"

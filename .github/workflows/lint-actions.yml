@@ -5,13 +5,11 @@ on:
     branches:
       - master
     paths:
-      - "action.yml"
       - ".github/workflows/*"
   pull_request:
     branches:
       - "*"
     paths:
-      - "action.yml"
       - ".github/workflows/*"
 
   workflow_dispatch: {}

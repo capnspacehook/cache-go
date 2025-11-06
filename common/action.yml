@@ -1,0 +1,85 @@
+name: "Shared logic for cache-go"
+description: "This actions is not intended to be used directly"
+author: "Andrew LeFevre"
+inputs:
+  mod-key:
+    description: "An explicit key for restoring and saving the module cache"
+    required: false
+  mod-restore-key:
+    description: "A prefix of `mod-key` to use to restore a stale cache if no cache hit occurred for `mod-key`"
+    required: false
+  build-key:
+    description: "An explicit key for restoring and saving the build cache"
+    required: false
+  build-restore-key:
+    description: "A prefix of `build-key` to use to restore a stale cache if no cache hit occurred for `build-key`"
+    required: false
+  fuzz-corpus-key:
+    description: "An explicit key for restoring and saving the fuzz corpus cache"
+    required: false
+  fuzz-corpus-restore-key:
+    description: "A prefix of `fuzz-corpus-key` to use to restore a stale cache if no cache hit occurred for `fuzz-corpus-key`"
+    required: false
+outputs:
+  mod-path:
+    value: ${{ steps.cache-paths.outputs.mod-path }}
+  mod-key:
+    value: ${{ steps.cache-keys.outputs.mod-key }}
+  mod-restore-key:
+    value: ${{ steps.cache-keys.outputs.mod-restore-key }}
+  build-path:
+    value: ${{ steps.cache-paths.outputs.build-path }}
+  build-key:
+    value: ${{ steps.cache-keys.outputs.build-key }}
+  build-restore-key:
+    value: ${{ steps.cache-keys.outputs.build-restore-key }}
+  fuzz-path:
+    value: ${{ steps.cache-paths.outputs.fuzz-path }}
+  fuzz-key:
+    value: ${{ steps.cache-keys.outputs.fuzz-key }}
+  fuzz-restore-key:
+    value: ${{ steps.cache-keys.outputs.fuzz-restore-key }} 
+runs:
+  using: composite
+  steps:
+    - name: Get Go cache paths
+      id: cache-paths
+      shell: bash
+      run: |
+        echo "mod-path=$(go env GOMODCACHE)" >> "${GITHUB_OUTPUT}"
+        GO_BUILD_CACHE_PATH="$(go env GOCACHE)"
+        echo "build-path=${GO_BUILD_CACHE_PATH}" >> "${GITHUB_OUTPUT}"
+        echo "fuzz-path=${GO_BUILD_CACHE_PATH}/fuzz" >> "${GITHUB_OUTPUT}"
+
+    - name: Set default cache keys if necessary
+      id: cache-keys
+      shell: bash
+      run: |
+        MOD_KEY="${{ inputs.mod-key }}"
+        MOD_RESTORE_KEY="${{ inputs.mod-restore-key }}"
+        BUILD_KEY="${{ inputs.build-key }}"
+        BUILD_RESTORE_KEY="${{ inputs.build-restore-key }}"
+        FUZZ_KEY="${{ inputs.fuzz-corpus-key }}"
+        FUZZ_RESTORE_KEY="${{ inputs.fuzz-corpus-restore-key }}"
+
+        GO_VERSION="$(go version | grep -Po '\d\.\d\d\.\d+')"
+
+        if [[ -z $MOD_KEY ]]; then
+          MOD_KEY="${{ github.job }}-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          MOD_RESTORE_KEY="${{ github.job }}-mod-${{ runner.os }}-"
+        fi
+        if [[ -z $BUILD_KEY ]]; then
+          BUILD_KEY="${{ github.job }}-build-${{ runner.os }}-${GO_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+          BUILD_RESTORE_KEY="${{ github.job }}-build-${{ runner.os }}-${GO_VERSION}-"
+        fi
+        if [[ -z $FUZZ_KEY ]]; then
+          FUZZ_KEY="${{ github.job }}-fuzz-${{ runner.os }}-${GO_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+          FUZZ_RESTORE_KEY="${{ github.job }}-fuzz-"
+        fi
+
+        echo "mod-key=${MOD_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "mod-restore-key=${MOD_RESTORE_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "build-key=${BUILD_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "build-restore-key=${BUILD_RESTORE_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "fuzz-key=${FUZZ_KEY}" >> "${GITHUB_OUTPUT}"
+        echo "fuzz-restore-key=${FUZZ_RESTORE_KEY}" >> "${GITHUB_OUTPUT}"
