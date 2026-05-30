@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: WillAbides/setup-go-faster@v1.16.0
         with:
           go-version: "*"
 
@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: WillAbides/setup-go-faster@v1.16.0
         with:
           go-version: "*"
 
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: WillAbides/setup-go-faster@v1.16.0
         with:
           go-version: "*"
 
