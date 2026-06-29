@@ -27,13 +27,13 @@ runs:
         fuzz-corpus-key: ${{ inputs.fuzz-corpus-key }}
 
     - name: Save Go module cache
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.cache-info.outputs.mod-key }}
         path: ${{ steps.cache-info.outputs.mod-path }}
 
     - name: Save Go build cache
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.cache-info.outputs.build-key }}
         # this will only match files in the build cache and ignore 
@@ -42,7 +42,7 @@ runs:
 
     - name: Save Go fuzz corpus
       if: inputs.cache-fuzz-corpus == 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.cache-info.outputs.fuzz-key }}
         path: ${{ steps.cache-info.outputs.fuzz-path }}
