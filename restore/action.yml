@@ -50,7 +50,7 @@ runs:
         fuzz-corpus-restore-key: ${{ inputs.fuzz-corpus-restore-key }}
 
     - name: Restore Go module cache
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         key: ${{ steps.cache-info.outputs.mod-key }}
         path: ${{ steps.cache-info.outputs.mod-path }}
@@ -58,7 +58,7 @@ runs:
           ${{ steps.cache-info.outputs.mod-restore-key }}
 
     - name: Restore Go build cache
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         key: ${{ steps.cache-info.outputs.build-key }}
         # this will only match files in the build cache and ignore 
@@ -69,7 +69,7 @@ runs:
 
     - name: Restore Go fuzz corpus
       if: inputs.cache-fuzz-corpus == 'true'
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         key: ${{ steps.cache-info.outputs.fuzz-key }}
         path: ${{ steps.cache-info.outputs.fuzz-path }}
