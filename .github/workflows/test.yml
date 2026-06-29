@@ -24,9 +24,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: actions/setup-go@v6
         with:
-          go-version: "*"
+          go-version: stable
+          check-latest: true
+          cache: false
 
       - name: Run restore action
         uses: ./restore
@@ -59,9 +61,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: actions/setup-go@v6.5.0
         with:
-          go-version: "*"
+          go-version: stable
+          check-latest: true
+          cache: false
 
       - name: Run restore action
         uses: ./restore
@@ -99,9 +103,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Go
-        uses: WillAbides/setup-go-faster@v1.14.0
+        uses: actions/setup-go@v6.5.0
         with:
-          go-version: "*"
+          go-version: stable
+          check-latest: true
+          cache: false
 
       - name: Populate caches
         run: |
